@@ -9,4 +9,4 @@ conda activate gsc
 pip install -r requirements.txt
 
 ## Training for FP32 model
-python train_fp.py --method 'GSC_AL' --dataset 'UCAS' --imgsize 448 --batchsize 32 --epochs 100 lr 1e-3
+python train_fp.py --dataset 'UCAS' --imgsize 448 --batchsize 32 --epochs 100 lr 1e-3
