@@ -12,4 +12,4 @@ pip install -r requirements.txt
 python train_fp.py --dataset 'UCAS' --imgsize 448 --batchsize 32 --epochs 100 --lr 1e-3
 
 ## Training for quantized model
-python train_gsc_al.py --method 'GSC_AL' --dataset 'UCAS' --imgsize 448 --batchsize 32 --epochs 100 --lr 1e-3
+python train_gsc_al.py --method 'GSC_AL' --dataset 'UCAS' --imgsize 448 --batchsize 32 --epochs 100 --lr 5e-2
