@@ -8,7 +8,9 @@ ubuntu 20.04
 
 ## Intall
 conda create --name gsc python=3.11
+
 conda activate gsc
+
 pip install -r requirements.txt
 
 ## Training for FP32 model
