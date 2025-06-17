@@ -1,0 +1,8 @@
+torch==2.6.0
+pyyaml
+numpy==1.24.4
+pytorchcv
+tqdm
+matplotlib
+opencv-python
+pycocotools==2.0.8

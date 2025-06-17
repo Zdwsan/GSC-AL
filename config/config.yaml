@@ -1,0 +1,7 @@
+dataset: UCAS
+epoch: 100
+gbit: 8
+maxGrad_conv: 128
+maxGrad_fc: 128
+method: GSC_AL
+modelname: resnet18
