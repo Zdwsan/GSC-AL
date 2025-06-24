@@ -23,7 +23,6 @@ class QLinear(QModule):
         self.fc_module = fc_module
         self.location = location
         self.location_w = location_w
-        # self.qw = QParam_W(w_bits=w_bits, signed=signed)
         self.qw = QParam(a_bits=w_bits, signed=signed, isWeight=True)
         self.register_buffer('M', torch.tensor(0))
         self.activate = activate
@@ -42,10 +41,6 @@ class QLinear(QModule):
         self.fc_module.weight.data = self.qw.quantize_tensor(self.fc_module.weight.data)
         self.qw.zero_point = self.qw.zero_point.view(-1, 1)
 
-        # scale = self.qw.scale
-        # del self.qw.scale
-        # self.qw.register_parameter('scale', nn.Parameter(scale, requires_grad=True))
-        
         self.fc_module.bias.data = torch.nn.Parameter(quantize_tensor(self.fc_module.bias.data,
                                             scale=self.qw.scale * self.qi.scale,
                                             zero_point=0,
@@ -61,12 +56,10 @@ class QLinear(QModule):
     def forward(self, x):
         if hasattr(self, 'qi'):
             self.qi.update(x)
-            # x = FakeQuantize.apply(x, self.qi)
         
         self.qw.update(self.fc_module.weight.data)
 
         x = F.linear(x, 
-                    #  FakeQuantize.apply(self.fc_module.weight, self.qw),
                      self.fc_module.weight,
                      self.fc_module.bias)
         
@@ -75,7 +68,6 @@ class QLinear(QModule):
 
         if hasattr(self, 'qo'):
             self.qo.update(x)
-            # x = FakeQuantize.apply(x, self.qo)
         return x
 
 
@@ -91,8 +83,6 @@ class QLinear(QModule):
 
     def quantize_training(self, x, i, e):
         out = self.QLinear(x, self.fc_module.weight, self.fc_module.bias, self.qi, self.qo, self.qw.scale, self.qw.zero_point, self.M, self.signed, self.w_bits, i, e, self.location)
-        # self.qo.update_quantize_activate(out)
-        # self.qo.record_activate_value(out)
         out = self.QTrunc(out, self.a_bits, self.signed, self.location)
         return out
 
@@ -105,7 +95,7 @@ class QConvBNReLU(QModule):
         self.bn_module = bn_module
         self.signed = signed
         self.qw = QParam(a_bits=w_bits, signed=signed, isWeight=True)
-        self.register_buffer('M', torch.tensor([], requires_grad=False))  # 将M注册为buffer
+        self.register_buffer('M', torch.tensor([], requires_grad=False))  
         self.activate = activate
         self.bl = bl
 
@@ -133,12 +123,9 @@ class QConvBNReLU(QModule):
     def forward(self, x):
         if hasattr(self, 'qi'):
             self.qi.update(x )
-            # x = FakeQuantize.apply(x, self.qi)
 
         if self.bn_module is not None:
             if self.training:
-            # if True:
-                # print('training....')
                 y = F.conv2d(x, self.conv_module.weight, self.conv_module.bias, 
                                 stride=self.conv_module.stride,
                                 padding=self.conv_module.padding,
@@ -148,21 +135,15 @@ class QConvBNReLU(QModule):
                 y = y.contiguous().view(self.conv_module.out_channels, -1) # CNHW -> C,NHW
                 mean = y.mean(1)
                 var = y.var(1)
-                # mean = y.mean(1).detach()
-                # var = y.var(1).detach()
                 self.bn_module.running_mean = \
                     (1 - self.bn_module.momentum) * self.bn_module.running_mean + \
                     self.bn_module.momentum * mean.detach()
                 self.bn_module.running_var = \
                     (1 - self.bn_module.momentum) * self.bn_module.running_var + \
                     self.bn_module.momentum * var.detach()
-                # print('=============================================')
             else:
-                # print('testing....')
                 mean = Variable(self.bn_module.running_mean)
                 var = Variable(self.bn_module.running_var)
-                # print(mean, var)
-                # print('---------------------------------------------------------------------')
 
             std = torch.sqrt(var + self.bn_module.eps)
 
@@ -174,7 +155,6 @@ class QConvBNReLU(QModule):
 
         x = F.conv2d(x, 
                      FakeQuantize.apply(weight, self.qw), 
-                    #  weight,
                      bias, 
                      stride=self.conv_module.stride,
                      padding=self.conv_module.padding, dilation=self.conv_module.dilation, 
@@ -185,8 +165,6 @@ class QConvBNReLU(QModule):
 
         if hasattr(self, 'qo'):
             self.qo.update(x )
-            # print('test....')
-            # x = FakeQuantize.apply(x, self.qo)
  
         return x
 
@@ -197,7 +175,6 @@ class QConvBNReLU(QModule):
             self.qo = qo
 
         self.M.data = (self.qw.scale * self.qi.scale / self.qo.scale).data.view(1, -1, 1, 1)
-        # self.M2.data = (self.qw.scale * self.qi.scale / self.qr.scale).data
 
         if self.bn_module is not None:
             std = torch.sqrt(self.bn_module.running_var + self.bn_module.eps)
@@ -205,16 +182,9 @@ class QConvBNReLU(QModule):
             weight, bias = self.fold_bn(self.conv_module, self.bn_module.running_mean, std)
         else:
             weight, bias = self.conv_module.weight, self.conv_module.bias
-        # self.conv_module.weight.data = self.qw.quantize_tensor(weight.data)
-        # self.conv_module.weight.data = self.conv_module.weight.data - self.qw.zero_point
         self.conv_module.weight.data = self.qw.quantize_tensor(weight.data)
         self.qw.zero_point = self.qw.zero_point.view(-1, 1, 1, 1)
         
-        # scale = self.qw.scale
-        # del self.qw.scale
-        # self.qw.register_parameter('scale', nn.Parameter(scale, requires_grad=True))
-
-        # if self.conv_module.bias is not None:
         self.conv_module.bias = torch.nn.Parameter(quantize_tensor(bias, scale=self.qi.scale * self.qw.scale,
                                                     zero_point=0, num_bits=32, signed=True))
             
@@ -230,7 +200,6 @@ class QConvBNReLU(QModule):
                                  self.conv_module.padding, self.conv_module.dilation, self.conv_module.groups, 
                                  self.qi, self.qo, self.qw.scale, self.qw.zero_point, self.M, self.signed, self.w_bits)
         out = self.QTrunc(out, self.a_bits, self.signed)
-        # print(123)
         return out
     
 
@@ -240,7 +209,6 @@ class QConvBNReLU(QModule):
                                  self.qi, self.qo, self.qw.scale, self.qw.zero_point, self.M, self.signed, self.w_bits)
 
         out = self.QTrunc(out, self.a_bits, self.signed)
-        # print(out[0,0])
         return out
 
         
@@ -270,10 +238,8 @@ class QAddReLU(QModule):
     def forward(self, x1, x2):
         if hasattr(self, 'qi1'):
             self.qi1.update(x1 )
-            # x1 = FakeQuantize.apply(x1, self.qi1)
         if hasattr(self, 'qi2'):
             self.qi2.update(x2 )
-            # x2 = FakeQuantize.apply(x2, self.qi2)
         x = x1 + x2
         
         if self.activate:
@@ -281,8 +247,6 @@ class QAddReLU(QModule):
         
         if hasattr(self, 'qo'):
             self.qo.update(x )
-            # print(self.qo.scale)
-            # x = FakeQuantize.apply(x, self.qo)
         return x
     
     def quantize_inference(self, x1, x2):
@@ -325,13 +289,10 @@ class QAvgPooling2d(QModule):
     def forward(self, x):
         if hasattr(self, 'qi'):
             self.qi.update(x)
-            # x = FakeQuantize.apply(x, self.qi)
-        # print(x.shape, self.kernel_size, self.stride, self.padding)
         x = F.avg_pool2d(x, self.kernel_size, self.stride, self.padding)
     
         if hasattr(self, 'qo'):
             self.qo.update(x)
-            # x = FakeQuantize.apply(x, self.qo)
         return x    
     
     def quantize_inference(self, x):
@@ -368,13 +329,11 @@ class QMaxPooling2d(QModule):
     def forward(self, x):
         if hasattr(self, 'qi'):
             self.qi.update(x)
-            # x = FakeQuantize.apply(x, self.qi)
 
         x = F.max_pool2d(x, self.kernel_size, self.stride, self.padding)
     
         if hasattr(self, 'qo'):
             self.qo.update(x)
-            # x = FakeQuantize.apply(x, self.qo)
         return x    
 
     def quantize_inference(self, x):

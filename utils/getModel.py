@@ -22,7 +22,7 @@ def get_net_parameters(model, plist):
             plist = get_net_parameters(m, plist)
     return plist
 
-def getModel(num_class, dataset, modelname, method, signed, w_bits, a_bits, wd):
+def getModel(num_class, modelname, signed, w_bits, a_bits):
     if modelname == 'resnet18':
         model = QuantizeResnet18(num_class, signed=signed, w_bits=w_bits, a_bits=a_bits)
 

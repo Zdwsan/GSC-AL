@@ -38,7 +38,6 @@ def encoder2boxes(reg_pred, stride, imagesize):
         reg_pred: [B, H, W, 4, grid_size]
     '''
     W, H = imagesize
-    # print(reg_pred.shape)
     B, c, f_h, f_w = reg_pred.shape
     grid_size = c // 4
 
@@ -87,14 +86,11 @@ def gt2xyxy(delta_boxes, imagesize):
 def visualize_detections(image, conf_threshold, test_target, boxes_list, scores_list, labels_list, class_names, epoch, batch_id, method, dataset):
     Height, Width = image.shape[:2]
     image = np.ascontiguousarray(image)
-
     fig, ax = plt.subplots(1)
     image = image[..., ::-1]
     ax.imshow(image)
-    # print(boxes)
     for n, (boxes, scores, labels) in enumerate(zip(boxes_list, scores_list, labels_list)):
         for i in range(len(boxes)):
-            # print(len(boxes), len(scores), len(labels))
             score = scores[i]
             if score < conf_threshold:  
                 continue
@@ -120,7 +116,6 @@ def visualize_detections(image, conf_threshold, test_target, boxes_list, scores_
             ax.text(x_min, y_min, 
                     f"{class_name}: {score:.2f}",
                     color='blue', 
-                    # backgroundcolor='blue', 
                     fontsize=10,
                     alpha=1
             )
@@ -129,15 +124,11 @@ def visualize_detections(image, conf_threshold, test_target, boxes_list, scores_
     target_boxes = test_target['boxes']
     if target_boxes.shape[0] > 0:
         target_boxes = gt2xyxy(target_boxes, imagesize=(Width, Height)).cpu().detach().numpy()
-    # print(target_boxes)
+    
     for la, bo in zip(target_label, target_boxes):
-        # la = str(la)
-
         class_name = class_names[la]
 
         xmin, ymin, xmax, ymax = map(int, bo)
-        # print(test_target['image_id'])
-        # print(xmin, ymin, xmax, ymax)
 
         w = xmax - xmin
         h = ymax - ymin
@@ -146,14 +137,11 @@ def visualize_detections(image, conf_threshold, test_target, boxes_list, scores_
         ax.text(xmin, ymin, 
                 class_name,
                 color='red', 
-                # backgroundcolor='red', 
                 fontsize=10,
         )
-    # 显示图像
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
     os.makedirs("pred/" + method + '-' + dataset, exist_ok=True)
     plt.savefig("pred/" + method + '-' + dataset + "/output-" + str(epoch) + '-' + str(batch_id) + ".jpg")
-    # plt.show()
     plt.close(fig)
 
 
@@ -182,34 +170,10 @@ def bbox_decode(anchor_points, pred_dist, reg_max):
         proj = torch.arange(reg_max, dtype=torch.float, device=pred_dist.device)
         b, a, c = pred_dist.shape  # batch, anchors, channels
         pred_dist = pred_dist.view(b, a, 4, c // 4).softmax(3).matmul(proj.type(pred_dist.dtype))
-    # pred_dist = pred_dist.view(b, a, c // 4, 4).transpose(2,3).softmax(3).matmul(self.proj.type(pred_dist.dtype))
-    # pred_dist = (pred_dist.view(b, a, c // 4, 4).softmax(2) * self.proj.type(pred_dist.dtype).view(1, 1, -1, 1)).sum(2)
     return dist2bbox(pred_dist, anchor_points, xywh=False)
 
 
 def bbox_iou(box1, box2, xywh=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7):
-    """
-    Calculate the Intersection over Union (IoU) between bounding boxes.
-
-    This function supports various shapes for `box1` and `box2` as long as the last dimension is 4.
-    For instance, you may pass tensors shaped like (4,), (N, 4), (B, N, 4), or (B, N, 1, 4).
-    Internally, the code will split the last dimension into (x, y, w, h) if `xywh=True`,
-    or (x1, y1, x2, y2) if `xywh=False`.
-
-    Args:
-        box1 (torch.Tensor): A tensor representing one or more bounding boxes, with the last dimension being 4.
-        box2 (torch.Tensor): A tensor representing one or more bounding boxes, with the last dimension being 4.
-        xywh (bool, optional): If True, input boxes are in (x, y, w, h) format. If False, input boxes are in
-                               (x1, y1, x2, y2) format.
-        GIoU (bool, optional): If True, calculate Generalized IoU.
-        DIoU (bool, optional): If True, calculate Distance IoU.
-        CIoU (bool, optional): If True, calculate Complete IoU.
-        eps (float, optional): A small value to avoid division by zero.
-
-    Returns:
-        (torch.Tensor): IoU, GIoU, DIoU, or CIoU values depending on the specified flags.
-    """
-    # Get the coordinates of bounding boxes
     if xywh:  # transform from xywh to xyxy
         (x1, y1, w1, h1), (x2, y2, w2, h2) = box1.chunk(4, -1), box2.chunk(4, -1)
         w1_, h1_, w2_, h2_ = w1 / 2, h1 / 2, w2 / 2, h2 / 2
@@ -234,17 +198,17 @@ def bbox_iou(box1, box2, xywh=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7
     if CIoU or DIoU or GIoU:
         cw = b1_x2.maximum(b2_x2) - b1_x1.minimum(b2_x1)  # convex (smallest enclosing box) width
         ch = b1_y2.maximum(b2_y2) - b1_y1.minimum(b2_y1)  # convex height
-        if CIoU or DIoU:  # Distance or Complete IoU https://arxiv.org/abs/1911.08287v1
+        if CIoU or DIoU:  
             c2 = cw.pow(2) + ch.pow(2) + eps  # convex diagonal squared
             rho2 = (
                 (b2_x1 + b2_x2 - b1_x1 - b1_x2).pow(2) + (b2_y1 + b2_y2 - b1_y1 - b1_y2).pow(2)
-            ) / 4  # center dist**2
-            if CIoU:  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
+            ) / 4  
+            if CIoU:  
                 v = (4 / math.pi**2) * ((w2 / h2).atan() - (w1 / h1).atan()).pow(2)
                 with torch.no_grad():
                     alpha = v / (v - iou + (1 + eps))
                 return iou - (rho2 / c2 + v * alpha)  # CIoU
-            return iou - rho2 / c2  # DIoU
-        c_area = cw * ch + eps  # convex area
-        return iou - (c_area - union) / c_area  # GIoU https://arxiv.org/pdf/1902.09630.pdf
-    return iou  # IoU
+            return iou - rho2 / c2  
+        c_area = cw * ch + eps 
+        return iou - (c_area - union) / c_area 
+    return iou  

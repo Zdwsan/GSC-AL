@@ -29,7 +29,7 @@ def run(dataset, size, learningRateQ, batchsize, epoch, w_bits, a_bits, g_bits, 
 
     computeLoss = YOLOv8Loss(num_classes=num_class, imagesize=size, reg_max=16, topk=10, strides=strides, device=device)
 
-    model = getModel(num_class, dataset, modelname, methods, signed=True, w_bits=w_bits, a_bits=a_bits, wd=1)
+    model = getModel(num_class, modelname, signed=True, w_bits=w_bits, a_bits=a_bits)
     model.to(device=device)
 
     data = {
@@ -168,7 +168,7 @@ def main():
     parser.add_argument("--method", type=str, default="GSC_AL")
     parser.add_argument("--dataset", type=str, default="UCAS")
     parser.add_argument("--imgsize", type=int, default=448)
-    parser.add_argument("--batchsize", type=int, default=32)
+    parser.add_argument("--batchsize", type=int, default=4)
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--lr", type=float, default=5e-2)
     opt = parser.parse_args()

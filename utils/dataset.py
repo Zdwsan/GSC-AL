@@ -20,12 +20,6 @@ def random_flip(im, boxes):
         boxes[:, 1] = 1 - boxes[:, 1]
     return im, boxes
 
-def scale_boxes(boxes, scale_w_h):
-    boxes[:, 0] = boxes[:, 0] * scale_w_h[0]
-    boxes[:, 2] = boxes[:, 2] * scale_w_h[0]
-    boxes[:, 1] = boxes[:, 1] * scale_w_h[1]
-    boxes[:, 3] = boxes[:, 3] * scale_w_h[1]
-    return boxes
         
 def reshape_transform(img_size):
     transforms = [T.ToPILImage()]

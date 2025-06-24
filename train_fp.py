@@ -123,7 +123,7 @@ def run(opt):
 
     num_class = 1
 
-    model = Resnet18_FPN(num_classes=num_class, pretrained=True)
+    model = Resnet18_FPN(num_classes=num_class, img_size=size, strides=strides)
 
     train_loader, test_loader = getDataset(dataset, size=size, batchsize=BATCH_SIZE, testbatchsize=BATCH_SIZE)
     

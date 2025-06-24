@@ -179,7 +179,7 @@ class QuantizeInvertedResidual_resnet18(nn.Module):
 
 class QuantizeResnet18(Resnet18_FPN):
     def __init__(self, num_class, signed=True, w_bits=8, a_bits=8):
-        super(QuantizeResnet18, self).__init__(num_classes=num_class, pretrained=True)
+        super(QuantizeResnet18, self).__init__(num_classes=num_class, img_size=448, strides=[8, 16, 32])
         self.signed = signed
         self.w_bits = w_bits
         self.a_bits = a_bits
