@@ -157,11 +157,9 @@ def run(dataset, size, learningRateQ, batchsize, epoch, w_bits, a_bits, g_bits, 
 
         if e%5==0 or (e>=int(epoch*0.9) and e%1==0):
             index = test(model, dataset, methods, num_class, test_loader, strides, size, e, device, plot=True)
-            if (e == 1) or (fitness < (index['F1']*0.5 + index['AP']*0.5)):
-                fitness = index['F1'] * 0.5 + index['AP'] * 0.5
-                maxIndex = index
-    print(maxIndex)
-    return maxIndex
+            print(index)
+  
+    return model
 
 def main():
     parser = argparse.ArgumentParser()
@@ -191,7 +189,7 @@ def main():
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    resluts = run(dataset, size, lrQ, batchsize, epoch, w_bits, a_bits, g_bits, modelname, methods, 
+    model = run(dataset, size, lrQ, batchsize, epoch, w_bits, a_bits, g_bits, modelname, methods, 
                               maxG_conv=maxG_conv, maxG_fc=maxG_fc, device=device)
 
 
