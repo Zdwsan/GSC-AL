@@ -174,11 +174,7 @@ def run(opt):
         scheduler.step()
         if e%5==0 or (e>=int(epoch*0.9) and e%1==0):
             index = test(model, dataset, 'FP32', num_class, test_loader, strides, size, e, device, plot=True)
-
-            if (e == 1) or (fitness < (index['F1']*0.5 + index['AP']*0.5)):
-                fitness = index['F1'] * 0.5 + index['AP'] * 0.5
-                max_map = index
-    print(max_map)
+            print(index)
 
 
 if __name__=='__main__':
