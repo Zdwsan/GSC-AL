@@ -8,12 +8,12 @@ from compute.forward_backward import (
     _QConv2dFunc,
     _QLinearFunc,
     _QTruncate,
+    _QMaxpoolFunc,
 )
 from models.quantize_dequantize import (
     FakeQuantize,
     QModule,
     QParam,
-    STE,
     quantize_tensor,
 )
 
@@ -438,6 +438,7 @@ class QAvgPooling2d(QModule):
         return out
 
 
+
 class QMaxPooling2d(QModule):
     def __init__(
         self, a_bits, kernel_size=3, stride=1, padding=0, qi=False, qo=True, signed=True
@@ -449,6 +450,7 @@ class QMaxPooling2d(QModule):
         self.a_bits = a_bits
         self.signed = signed
         self.register_buffer("M", torch.tensor(0))
+        self.QMaxp = _QMaxpoolFunc.apply
         self.QTrunc = _QTruncate.apply
 
     def freeze(self, qi=None, qo=None):
@@ -473,19 +475,15 @@ class QMaxPooling2d(QModule):
         return x
 
     def quantize_inference(self, x):
-        x = x - self.qi.zero_point
-        x = F.max_pool2d(x, self.kernel_size, self.stride, self.padding)
-        x = self.M * x
-        out = x + self.qo.zero_point
+        out = self.QMaxp(
+            x, self.kernel_size, self.stride, self.padding, self.qi, self.qo
+        )
         out = self.QTrunc(out, self.a_bits, self.signed)
         return out
 
     def quantize_training(self, x):
-        x = STE.apply(x)
-        x = x - self.qi.zero_point
-        x = F.max_pool2d(x, self.kernel_size, self.stride, self.padding)
-        x = self.M * x
-        x = STE.apply(x)
-        out = x + self.qo.zero_point
+        out = self.QMaxp(
+            x, self.kernel_size, self.stride, self.padding, self.qi, self.qo
+        )
         out = self.QTrunc(out, self.a_bits, self.signed)
         return out

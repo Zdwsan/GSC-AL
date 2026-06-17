@@ -286,27 +286,34 @@ class _QMaxpoolFunc(torch.autograd.Function):
     @staticmethod
     def forward(ctx, x, kernel_size, stride, padding, qi, qo):
         x = x.round()
+
         ctx.input_shape = x.shape
+        ctx.kernel_size = kernel_size
+        ctx.stride = stride
+        ctx.padding = padding
+
         x = x - qi.zero_point
-        x, indices = F.max_pool2d_with_indices(x, kernel_size, stride, padding)
+        x, indices = F.max_pool2d(
+            x, kernel_size, stride, padding, return_indices=True
+        )
+        M = qi.scale / qo.scale
+        ctx.M = M
         ctx.save_for_backward(indices)
-        x = x * qi.scale / qo.scale
+
+        x = x * M
         x.round_()
         x = x + qo.zero_point
         return x
 
     @staticmethod
     def backward(ctx, grad_output):
-        batch, out_channels, w, h = ctx.input_shape
-
         (indices,) = ctx.saved_tensors
-        grad = torch.zeros((batch, out_channels, w * h))
-        indices_ = indices.view(batch, out_channels, -1)
-        grad_ = grad_output.view(batch, out_channels, -1)
-        for i in range(batch):
-            for j in range(out_channels):
-                for k in range(grad_.shape[-1]):
-                    grad[i, j, indices_[i, j, k]] = grad_[i, j, k]
-        grad_input = grad.view(batch, out_channels, w, h)
-
+        grad_input = F.max_unpool2d(
+            grad_output * ctx.M,
+            indices,
+            ctx.kernel_size,
+            ctx.stride,
+            ctx.padding,
+            output_size=ctx.input_shape,
+        )
         return grad_input, None, None, None, None, None
