@@ -1,0 +1,10 @@
+torch==2.6.0
+torchvision
+pyyaml
+numpy==1.24.4
+pytorchcv
+tqdm
+matplotlib
+opencv-python
+Pillow
+pycocotools==2.0.8
