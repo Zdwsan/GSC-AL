@@ -66,9 +66,12 @@ python train_gsc_al.py --dataset UCAS --imgsize 448 --batchsize 32 --epochs 100 
 If this code is useful for your research, please cite the corresponding paper. Replace the placeholder below with the final BibTeX entry after publication:
 
 ```bibtex
-@article{gscal,
-  title  = {Gradient Scale Correction and Activation Loss for Quantized Model Training},
-  author = {Your Name and Coauthors},
-  year   = {2025}
+@article{zhang2026directly,
+  title={Directly Training on Quantized Model via Gradient Scale Correction for Edge Device},
+  author={Zhang, Dewang and Yuan, Jingling and Zhou, Yu and Hu, Chuang and Yu, Xiaohan and Gou, Heping},
+  journal={Neural Networks},
+  pages={109266},
+  year={2026},
+  publisher={Elsevier}
 }
 ```
