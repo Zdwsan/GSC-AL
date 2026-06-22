@@ -69,6 +69,9 @@ If this code is useful for your research, please cite the corresponding paper. R
   journal={Neural Networks},
   pages={109266},
   year={2026},
-  publisher={Elsevier}
+  publisher={Elsevier},
+doi = {https://doi.org/10.1016/j.neunet.2026.109266},
 }
+
+
 ```
