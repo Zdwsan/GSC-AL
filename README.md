@@ -1,11 +1,8 @@
 # GSC-AL
 
-Official implementation of **Gradient Scale Correction and Activation Loss (GSC-AL)** for training quantized object detection models on private edge-side data.
-
 ## Abstract
 
-Deploying pre-trained models on edge devices often requires quantization because of limited computation and memory resources. Adapting these models to private data usually relies on uploading data for retraining or fine-tuning, which can introduce security and privacy risks. This project implements Gradient Scale Correction (GSC), which rescales gradients to improve weight updates in quantized models, and Activation Loss (AL), which mitigates non-Gaussian activation distributions caused by accumulated quantization errors and activation truncation during training.
-
+The deployment of pre-trained models on edge devices often necessitates quantization due to computational resource constraints. Adapting these models to new private data typically involves data uploads for retraining or fine-tuning, which raises significant security concerns. Existing training methods struggle to directly train quantized models on edge devices. To address this, we analyzed the training process of quantized models and proposed a novel training method based on Gradient Scale Correction and Activation Loss (GSC-AL). Initially, we focused on the gradient and weight mismatch in quantized models during training. The proposed Gradient Scale Correction (GSC) efficiently scales the gradient to a defined range, enabling effective weight updates in quantized models. Furthermore, we introduced the activation Loss (AL) in the loss function, effectively alleviating the non-Gaussian activation distribution phenomenon caused by the accumulation of quantization errors and activation truncation problems in the training process based on GSC. Finally, we validate our method on seven common datasets using ResNet18 and MobileNetV2 as baseline models. Experimental results demonstrate that our GSC-AL method significantly enhances model predictive performance, achieving a training accuracy improvement of 41% compared to existing methods. The proposed GSC-AL method is presented at https://github.com/Zdwsan/GSC-AL.
 ## Environment
 
 The code has been tested on Ubuntu 20.04 with Python 3.11.
